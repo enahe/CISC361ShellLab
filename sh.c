@@ -113,6 +113,11 @@ int sh( int argc, char **argv, char **envp )
      else {
      char * pathline = which(command, pathlist); 
      args[0] = pathline;
+        count = 0;
+        while (args[count] != NULL) {
+           printf(args[count]);
+           count++;
+      }
      pid_t pid = fork();
      /* find it */
      if(pid == -1) {
@@ -194,4 +199,6 @@ while ((ent = readdir(directoryListing)) != NULL) {
 }
 closedir(directoryListing);
 } /* list() */
+
+
 

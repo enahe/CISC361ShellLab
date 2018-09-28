@@ -112,7 +112,6 @@ int sh( int argc, char **argv, char **envp )
 }
      else {
      char * pathline = which(command, pathlist); 
-           
      args[0] = pathline;
      pid_t pid = fork();
      /* find it */
@@ -121,8 +120,6 @@ int sh( int argc, char **argv, char **envp )
         return;
      } 
      else if (pid == 0) {
-          printf ("%s\n, %s\n", pathline, argsEx[0]);
-          
           if(execve(pathline, args, envp) < 0) {
                  printf("Could not execute command.\n");
           }
@@ -179,9 +176,18 @@ void list ( char *dir )
 {
 DIR *directoryListing;
 struct dirent *ent; 
-if ((directoryListing= opendir(dir)) == NULL) {
-   printf("Could not open current directory");
-   return 0;
+
+if (dir == NULL) {
+      if ((directoryListing= opendir(".")) == NULL) {
+          printf("Could not open current directory");
+          return 0;
+  }
+} 
+else {
+     if ((directoryListing= opendir(dir)) == NULL) {
+         printf("Could not open current directory");
+         return 0;
+       }
 }
 while ((ent = readdir(directoryListing)) != NULL) {
     printf("%s\n", ent->d_name);

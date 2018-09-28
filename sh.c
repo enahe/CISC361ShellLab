@@ -51,6 +51,7 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
+        commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
         arg = strtok(commandline, " ");
@@ -63,28 +64,68 @@ int sh( int argc, char **argv, char **envp )
            count++;
            arg = strtok(NULL, " ");
       }
-    free(arg);
-    free(command);
+   
     printf("%s", prompt);
     /* check for each built in command and implement */
-
-     /*  else  program to exec */
-    {
-       /* find it */
-       /* do fork(), execve() and waitpid() */
-
-    //  else
-     //   fprintf(stderr, "%s: Command not found.\n", args[0]);
+    if (strcmp(command, "exit") == 0) {
+      printf("Running exit\n");
+      printf("That was terrible. I'll be back in 10 minutes.");
+      exit(0);
     }
+    else if (strcmp(command, "which") == 0) {
+       printf("Running which\n");
+       which(args[0], pathlist);
+       printf(prompt);
+    }
+    /*  else  program to exec */
+     /* do fork(), execve() and waitpid() */
+    else {
+    //check to see if the command entered is a file name
+
+     if (
+     char pathline = which(command, pathlist); 
+     pid_t pid = fork();
+     /* find it */
+     if(pid == -1) {
+         printf("Your child is doa. You should take better care of them next itme.\n");
+        return;
+     } 
+     else if (pid == 0) {
+          if(execve(pathline, args, envp) < 0) {
+                 printf("Could not execute command.\n");
+          }
+          exit(0);
+     }
+     else {
+        waitpid(-1, NULL, 0);
+        return;
+    }
+    free(arg);
+    free(command);
   }
 }
+}
   return 0;
-} /* sh() */
+} 
+/* sh() */
 
+
+/* loop through pathlist until finding command and return it.  Return
+NULL when not found. */
 char *which(char *command, struct pathelement *pathlist )
 {
-   /* loop through pathlist until finding command and return it.  Return
-   NULL when not found. */
+while (pathlist->next) {
+    char *path = calloc(MAX_CANON, sizeof(char));
+    snprintf(path, MAX_CANON, "%s%s%s", pathlist->element,"/",command);
+    if (access(path, F_OK) == 0) {
+        printf("%s\n", path);
+        return path;
+}
+    pathlist = pathlist->next;
+}
+printf("Command not found in path\n");
+return NULL;
+  
 
 } /* which() */
 

@@ -18,6 +18,7 @@ int sh( int argc, char **argv, char **envp )
   char *commandline = calloc(MAX_CANON, sizeof(char));
   char *command, *arg, *commandpath, *p, *pwd, *owd;
   char **args = calloc(MAXARGS, sizeof(char*));
+  char **argsEx = calloc(MAXARGS, sizeof(char*));
   int uid, i, status, argsct, go = 1;
   struct passwd *password_entry;
   char *homedir;
@@ -51,14 +52,20 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
+        int count = 0; 
+        while (args[count] != NULL ){
+             args[count] = NULL;
+             count++;
+         }
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
+        args[0] = command;
         arg = strtok(NULL, "");
         printf(" %s\n", command);
-        int count = 0;
+        int count = 1;
         while (arg != NULL) {
            args[count] = arg;
            count++;
@@ -69,7 +76,7 @@ int sh( int argc, char **argv, char **envp )
     /* check for each built in command and implement */
     if (strcmp(command, "exit") == 0) {
       printf("Running exit\n");
-      printf("That was terrible. I'll be back in 10 minutes.");
+      printf("That was terrible. I'll be back in 10 minutes.\n");
       exit(0);
     }
     else if (strcmp(command, "which") == 0) {
@@ -77,13 +84,41 @@ int sh( int argc, char **argv, char **envp )
        which(args[0], pathlist);
        printf(prompt);
     }
+    else if (strcmp(command, "where") == 0) {
+       printf("Running where\n");
+       where(args[0], pathlist);
+       printf(prompt);
+    }
+    else if (strcmp(command, "list") == 0) {
+        printf("Running list \n");
+        list(args[0]);
+        printf(prompt);
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
     else {
     //check to see if the command entered is a file name
-
-     if (
-     char pathline = which(command, pathlist); 
+    if(access(command, F_OK) == 0) {
+      pid_t pid = fork();
+     /* find it */
+     if(pid == -1) {
+         printf("Your child is doa. You should take better care of them next itme.\n");
+        return;
+     } 
+     else if (pid == 0) {
+          if(execve(command, args, envp) < 0) {
+                 printf("Could not execute command.\n");
+          }
+          exit(0);
+     }
+     else {
+        waitpid(-1, NULL, 0);
+        printf(prompt);
+    }
+}
+     else {
+     char * pathline = which(command, pathlist); 
+           
+     args[0] = pathline;
      pid_t pid = fork();
      /* find it */
      if(pid == -1) {
@@ -91,6 +126,8 @@ int sh( int argc, char **argv, char **envp )
         return;
      } 
      else if (pid == 0) {
+          printf ("%s\n, %s\n", pathline, argsEx[0]);
+          
           if(execve(pathline, args, envp) < 0) {
                  printf("Could not execute command.\n");
           }
@@ -98,8 +135,9 @@ int sh( int argc, char **argv, char **envp )
      }
      else {
         waitpid(-1, NULL, 0);
-        return;
+        printf(prompt);
     }
+}
     free(arg);
     free(command);
   }
@@ -131,12 +169,27 @@ return NULL;
 
 char *where(char *command, struct pathelement *pathlist )
 {
-  /* similarly loop through finding all locations of command */
+ while (pathlist->next) {
+    char *path = calloc(MAX_CANON, sizeof(char));
+    snprintf(path, MAX_CANON, "%s%s%s", pathlist->element,"/",command);
+    if (access(path, F_OK) == 0) {
+        printf("%s\n", path);
+}
+    pathlist = pathlist->next;
+}
+return NULL;
 } /* where() */
 
 void list ( char *dir )
 {
-  /* see man page for opendir() and readdir() and print out filenames for
-  the directory passed */
+DIR *dr = opendir(".");
+if (dr = NULL) {
+   printf("Could not open current directory");
+   return 0;
+}
+while ((dir = readdir(dr)) != NULL) {
+    printf("%s\n", dir->d_name);
+}
+closedir(dr);
 } /* list() */
 

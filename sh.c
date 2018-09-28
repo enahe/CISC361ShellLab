@@ -52,20 +52,14 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
-        int count = 0; 
-        while (args[count] != NULL ){
-             args[count] = NULL;
-             count++;
-         }
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
-        args[0] = command;
         arg = strtok(NULL, "");
         printf(" %s\n", command);
-        int count = 1;
+        int count = 0;
         while (arg != NULL) {
            args[count] = arg;
            count++;
@@ -93,6 +87,7 @@ int sh( int argc, char **argv, char **envp )
         printf("Running list \n");
         list(args[0]);
         printf(prompt);
+    }
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
     else {
@@ -182,14 +177,15 @@ return NULL;
 
 void list ( char *dir )
 {
-DIR *dr = opendir(".");
-if (dr = NULL) {
+DIR *directoryListing;
+struct dirent *ent; 
+if ((directoryListing= opendir(dir)) == NULL) {
    printf("Could not open current directory");
    return 0;
 }
-while ((dir = readdir(dr)) != NULL) {
-    printf("%s\n", dir->d_name);
+while ((ent = readdir(directoryListing)) != NULL) {
+    printf("%s\n", ent->d_name);
 }
-closedir(dr);
+closedir(directoryListing);
 } /* list() */
 

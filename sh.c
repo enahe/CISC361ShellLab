@@ -14,7 +14,7 @@
 
 int sh( int argc, char **argv, char **envp )
 {
-  char*prompt = calloc(PROMPTMAX, sizeof(char));
+  char *prompt = calloc(PROMPTMAX, sizeof(char));
   char *commandline = calloc(MAX_CANON, sizeof(char));
   char *command, *arg, *commandpath, *p, *pwd, *owd;
   char **args = calloc(MAXARGS, sizeof(char*));
@@ -36,8 +36,7 @@ int sh( int argc, char **argv, char **envp )
   }
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
-  prompt[0] = ' '; prompt[1] = '\0';
-  strcpy(prompt, "🍆💦💦 >");
+  snprintf(prompt, PROMPTMAX, "%s%s%s%s", " " , "[", pwd, "]>");
 
   /* Put PATH into a linked list */
   pathlist = get_path();
@@ -88,6 +87,29 @@ int sh( int argc, char **argv, char **envp )
         list(args[0]);
         printf(prompt);
     }
+    else if (strcmp(command, "cd") == 0) {
+        printf("Running cd \n");
+        if (args[0] == NULL) {
+           chdir("-");
+        }
+        else {
+           chdir(args[0]);
+        }
+        if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL )
+        {
+           perror("getcwd");
+           exit(2);
+        }
+        snprintf(prompt, PROMPTMAX, "%s%s%s%s", " " , "[", pwd, "]>");
+        printf(prompt);
+    }
+    else if (strcmp(command, "pwd") == 0) {
+        printf("Running pwd \n");
+        printWorking(pwd);
+        printf(prompt);
+    }
+
+
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
     else {
@@ -110,16 +132,21 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
 }
+
+
+
      else {
-     char * pathline = which(command, pathlist); 
-     args[0] = pathline;
-        count = 0;
-        while (args[count] != NULL) {
-           printf(args[count]);
-           count++;
-      }
      pid_t pid = fork();
      /* find it */
+      char * pathline = which(command, pathlist); 
+       args[0] = pathline;
+       //error here, when I do this, the rest of args is lost.
+      //  count = 0;
+     //   while (args[count] != NULL) {
+     //      printf("Im here in the parent");
+     //      printf(args[count]);
+     //      count++;
+    //  }
      if(pid == -1) {
          printf("Your child is doa. You should take better care of them next itme.\n");
         return;
@@ -198,7 +225,19 @@ while ((ent = readdir(directoryListing)) != NULL) {
     printf("%s\n", ent->d_name);
 }
 closedir(directoryListing);
-} /* list() */
+} 
+
+// cd: changes the directory for the users
+void cd ( char *dir) 
+{
+
+}
+// pwd: gets current working directory
+
+void printWorking (char *pwd) {
+  getcwd(pwd, sizeof(pwd));
+  printf("\nDir: %s\n", pwd);
+} 
 
 
 

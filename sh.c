@@ -108,6 +108,11 @@ int sh( int argc, char **argv, char **envp )
         printWorking(pwd);
         printf(prompt);
     }
+    else if (strcmp(command, "pid") == 0) {
+        getPID();
+        printf("\n");
+        printf(prompt);
+    }
 
 
     /*  else  program to exec */
@@ -227,11 +232,7 @@ while ((ent = readdir(directoryListing)) != NULL) {
 closedir(directoryListing);
 } 
 
-// cd: changes the directory for the users
-void cd ( char *dir) 
-{
 
-}
 // pwd: gets current working directory
 
 void printWorking (char *pwd) {
@@ -239,5 +240,17 @@ void printWorking (char *pwd) {
   printf("\nDir: %s\n", pwd);
 } 
 
+void getPID() 
+{
+     pid_t pid, ppid;
+     gid_t gid;
+
+	/* get the process id */
+	if ((pid = getpid()) < 0) {
+	  perror("unable to get pid");
+	} else {
+	  printf("The process id is %d\n", pid);
+	}
+}
 
 

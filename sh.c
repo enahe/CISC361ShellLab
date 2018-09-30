@@ -113,6 +113,10 @@ int sh( int argc, char **argv, char **envp )
         printf("\n");
         printf(prompt);
     }
+    else if (strcmp(command, "kill") == 0) {
+       killPID(args[0], args[1]);
+       printf(prompt);
+    }
 
 
     /*  else  program to exec */
@@ -253,4 +257,22 @@ void getPID()
 	}
 }
 
+void killPID(char * pid, char * signalNumber) {
+     if (signalNumber == NULL ) {
+    
+         if (kill(atoi(pid), SIGTERM ) < 0) {
+	     perror("unable to kill process");
+         } else {
+	     printf("The process killed \n");
+	 }
+     } 
+     else {
+          if (kill(atoi(pid), atoi(signalNumber)) < 0) {
+	     perror("unable to kill process");
+         } else {
+	     printf("The process killed \n");
+	 }
+     }
+
+}
 

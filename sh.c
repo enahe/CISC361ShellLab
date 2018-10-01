@@ -16,6 +16,7 @@ int sh( int argc, char **argv, char **envp )
 {
   char *prompt = calloc(PROMPTMAX, sizeof(char));
   char *commandline = calloc(MAX_CANON, sizeof(char));
+  char *promptPrefix = calloc(MAX_CANON, sizeof(char));
   char *command, *arg, *commandpath, *p, *pwd, *owd;
   char **args = calloc(MAXARGS, sizeof(char*));
   char **argsEx = calloc(MAXARGS, sizeof(char*));
@@ -28,7 +29,7 @@ int sh( int argc, char **argv, char **envp )
   password_entry = getpwuid(uid);               /* get passwd info */
   homedir = password_entry->pw_dir;		/* Home directory to start
 						  out with*/
-     
+  promptPrefix = " ";   
   if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL )
   {
     perror("getcwd");
@@ -36,7 +37,7 @@ int sh( int argc, char **argv, char **envp )
   }
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
-  snprintf(prompt, PROMPTMAX, "%s%s%s%s", " " , "[", pwd, "]>");
+  snprintf(prompt, PROMPTMAX, "%s%s%s%s", promptPrefix , "[", pwd, "]>");
 
   /* Put PATH into a linked list */
   pathlist = get_path();
@@ -56,7 +57,7 @@ int sh( int argc, char **argv, char **envp )
         command = calloc(MAX_CANON, sizeof(char));
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
-        arg = strtok(NULL, "");
+        arg = strtok(NULL, " ");
         printf(" %s\n", command);
         int count = 0;
         while (arg != NULL) {
@@ -117,7 +118,11 @@ int sh( int argc, char **argv, char **envp )
        killPID(args[0], args[1]);
        printf(prompt);
     }
-
+    else if (strcmp(command, "prompt") == 0) {
+        promptUser(prompt, pwd, args[0]);
+        printf("\n");
+        printf(prompt);
+    }
 
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
@@ -147,21 +152,23 @@ int sh( int argc, char **argv, char **envp )
      else {
      pid_t pid = fork();
      /* find it */
-      char * pathline = which(command, pathlist); 
-       args[0] = pathline;
+       char * pathline = calloc(MAX_CANON, sizeof(char));
+       pathline = which(command, pathlist); 
+       argsEx[0] = pathline;
        //error here, when I do this, the rest of args is lost.
-      //  count = 0;
-     //   while (args[count] != NULL) {
-     //      printf("Im here in the parent");
-     //      printf(args[count]);
-     //      count++;
-    //  }
+        count = 0;
+        while (args[count] != NULL) {
+           printf("Fixing command arguments");
+           argsEx[count+1] = args[count];
+           printf(argsEx[count+1]);
+           count++;
+      }
      if(pid == -1) {
          printf("Your child is doa. You should take better care of them next itme.\n");
         return;
      } 
      else if (pid == 0) {
-          if(execve(pathline, args, envp) < 0) {
+          if(execve(pathline, argsEx, envp) < 0) {
                  printf("Could not execute command.\n");
           }
           exit(0);
@@ -199,7 +206,7 @@ return NULL;
   
 
 } /* which() */
-
+//where: prints all instances of the where the command is in the path 
 char *where(char *command, struct pathelement *pathlist )
 {
  while (pathlist->next) {
@@ -267,12 +274,27 @@ void killPID(char * pid, char * signalNumber) {
 	 }
      } 
      else {
-          if (kill(atoi(pid), atoi(signalNumber)) < 0) {
+          if (kill(atoi(signalNumber), atoi(pid)) < 0) {
 	     perror("unable to kill process");
          } else {
 	     printf("The process killed \n");
 	 }
      }
 
+}
+
+void promptUser(char * currentPrompt, char * currentDIR, char * promptName) {
+      if (promptName == NULL) {
+           printf("Please enter your new prompt header.\n");
+           char *commandlinePrompt = calloc(MAX_CANON, sizeof(char));
+           fgets(commandlinePrompt, MAX_CANON, stdin);
+           commandlinePrompt[strlen(commandlinePrompt)-1] = '\0';
+           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", commandlinePrompt , " [", currentDIR, "]>");
+           free(commandlinePrompt);
+      }
+      else {
+           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", promptName, " [", currentDIR, "]>");
+      }
+      
 }
 

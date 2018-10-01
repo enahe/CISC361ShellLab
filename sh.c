@@ -101,7 +101,7 @@ int sh( int argc, char **argv, char **envp )
            perror("getcwd");
            exit(2);
         }
-        snprintf(prompt, PROMPTMAX, "%s%s%s%s", " " , "[", pwd, "]>");
+        snprintf(prompt, PROMPTMAX, "%s%s%s%s", promptPrefix , "[", pwd, "]>");
         printf(prompt);
     }
     else if (strcmp(command, "pwd") == 0) {
@@ -119,7 +119,7 @@ int sh( int argc, char **argv, char **envp )
        printf(prompt);
     }
     else if (strcmp(command, "prompt") == 0) {
-        promptUser(prompt, pwd, args[0]);
+        promptPrefix = promptUser(prompt, promptPrefix, pwd, args[0]);
         printf("\n");
         printf(prompt);
     }
@@ -283,18 +283,23 @@ void killPID(char * pid, char * signalNumber) {
 
 }
 
-void promptUser(char * currentPrompt, char * currentDIR, char * promptName) {
+char *promptUser(char * currentPrompt, char * currentHeader, char * currentDIR, char * promptName) {
       if (promptName == NULL) {
            printf("Please enter your new prompt header.\n");
            char *commandlinePrompt = calloc(MAX_CANON, sizeof(char));
            fgets(commandlinePrompt, MAX_CANON, stdin);
            commandlinePrompt[strlen(commandlinePrompt)-1] = '\0';
-           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", commandlinePrompt , " [", currentDIR, "]>");
+           currentHeader = commandlinePrompt;
+           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", currentHeader , " [", currentDIR, "]>");
            free(commandlinePrompt);
+           return currentHeader;
       }
       else {
-           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", promptName, " [", currentDIR, "]>");
+           currentHeader = promptName;
+           snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", currentHeader, " [", currentDIR, "]>");
+           return currentHeader;
       }
+           
       
 }
 

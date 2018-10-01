@@ -60,6 +60,16 @@ int sh( int argc, char **argv, char **envp )
         arg = strtok(NULL, " ");
         printf(" %s\n", command);
         int count = 0;
+        while (argsEx[count] != NULL) {
+           argsEx[count] = NULL;
+           count++;
+        }
+        count = 0;
+        while (args[count] != NULL) {
+             args[count] = NULL;
+             count++;
+        }
+        count = 0;
         while (arg != NULL) {
            args[count] = arg;
            count++;
@@ -69,29 +79,46 @@ int sh( int argc, char **argv, char **envp )
     printf("%s", prompt);
     /* check for each built in command and implement */
     if (strcmp(command, "exit") == 0) {
-      printf("Running exit\n");
+      printf("\nRunning exit\n");
       printf("That was terrible. I'll be back in 10 minutes.\n");
       exit(0);
     }
     else if (strcmp(command, "which") == 0) {
-       printf("Running which\n");
-       which(args[0], pathlist);
+       
+       printf("\nRunning which\n");
+       count = 0;
+       while (args[count] != NULL) {
+          which(args[count], pathlist);
+          count++;
+       }
        printf(prompt);
     }
     else if (strcmp(command, "where") == 0) {
-       printf("Running where\n");
-       where(args[0], pathlist);
+       printf("\nRunning where\n");
+       count = 0;
+       while (args[count] != NULL) {
+          where(args[count], pathlist);
+          count++;
+       }
        printf(prompt);
     }
     else if (strcmp(command, "list") == 0) {
-        printf("Running list \n");
-        list(args[0]);
+       count = 0;
+       if (args[count] == NULL) {
+           printf("\nPrinting files in current directory.");
+           list(args[count]);
+        }
+       while (args[count] != NULL) {
+          printf("\nPrinting files in %s\n", args[count]);
+          list(args[count]);
+          count++;
+       }
         printf(prompt);
     }
     else if (strcmp(command, "cd") == 0) {
-        printf("Running cd \n");
+        printf("\nRunning cd \n");
         if (args[0] == NULL) {
-           chdir("-");
+           chdir("..");
         }
         else {
            chdir(args[0]);
@@ -105,7 +132,7 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
     else if (strcmp(command, "pwd") == 0) {
-        printf("Running pwd \n");
+        printf("\nRunning pwd \n");
         printWorking(pwd);
         printf(prompt);
     }

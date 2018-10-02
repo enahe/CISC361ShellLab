@@ -25,6 +25,7 @@ int sh( int argc, char **argv, char **envp )
   struct passwd *password_entry;
   char *homedir;
   struct pathelement *pathlist;
+  struct pathelement *historylist;
   
   uid = getuid();
   password_entry = getpwuid(uid);               /* get passwd info */
@@ -63,7 +64,7 @@ int sh( int argc, char **argv, char **envp )
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
         arg = strtok(NULL, " ");
-        printf(" %s\n", command);
+        addHistory(command, &historylist);
         int count = 0;
         while (argsEx[count] != NULL) {
            argsEx[count] = NULL;
@@ -91,7 +92,7 @@ int sh( int argc, char **argv, char **envp )
       if (count > 0) {
       args = wildcard.we_wordv;
       }
- 
+
     printf("%s", prompt);
     /* check for each built in command and implement */
     if (strcmp(command, "exit") == 0) {
@@ -101,7 +102,7 @@ int sh( int argc, char **argv, char **envp )
     }
     else if (strcmp(command, "which") == 0) {
        
-       printf("\nRunning which\n");
+       printf("\nRunning built in which\n");
        count = 0;
        while (args[count] != NULL) {
           which(args[count], pathlist);
@@ -110,7 +111,7 @@ int sh( int argc, char **argv, char **envp )
        printf(prompt);
     }
     else if (strcmp(command, "where") == 0) {
-       printf("\nRunning where\n");
+       printf("\nRunning built in where\n");
        count = 0;
        while (args[count] != NULL) {
           where(args[count], pathlist);
@@ -132,7 +133,7 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
     else if (strcmp(command, "cd") == 0) {
-        printf("\nRunning cd \n");
+        printf("\nRunning built in command cd \n");
         if (args[0] == NULL) {
            chdir("..");
         }
@@ -148,7 +149,7 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
     else if (strcmp(command, "pwd") == 0) {
-        printf("\nRunning pwd \n");
+        printf("\nRunning built in command pwd \n");
         printWorking(pwd);
         printf(prompt);
     }
@@ -158,16 +159,25 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
     else if (strcmp(command, "kill") == 0) {
+       printf("\nRunning built in command kill\n");
        killPID(args[0], args[1]);
        printf(prompt);
     }
     else if (strcmp(command, "prompt") == 0) {
+        printf("\nRunning built in command prompt\n");
         promptPrefix = promptUser(prompt, promptPrefix, pwd, args[0]);
         printf("\n");
         printf(prompt);
     }
     else if (strcmp(command, "printenv") == 0) {
+        printf("\nRunning built in command printenv\n");
         printEnvironment(pathlist, args[0], args[1]);
+        printf("\n");
+        printf(prompt);
+    }
+    else if (strcmp(command, "history") == 0) {
+        printf("\nRunning built in command history\n");
+        printHistory(historylist, args[0]);
         printf("\n");
         printf(prompt);
     }
@@ -348,6 +358,7 @@ char *promptUser(char * currentPrompt, char * currentHeader, char * currentDIR, 
 
 void printEnvironment(struct pathelement *pathlist, char * firstEnv, char * secondEnv) {
       if (firstEnv == NULL) {
+              pathlist = pathlist->next;
               while (pathlist->next != NULL) {
               printf("%s\n", pathlist->element);
               pathlist = pathlist->next;
@@ -359,5 +370,49 @@ void printEnvironment(struct pathelement *pathlist, char * firstEnv, char * seco
       else {
               printf(getenv(firstEnv));
       }
+}
+
+void addHistory (char * command, struct pathelement **historypath) { 
+      struct pathelement* newElement = (struct pathelement*)malloc(sizeof(struct pathelement));
+      struct pathelement* lastElement = *historypath;
+      newElement->element = malloc(strlen(command)+1);
+      strcpy(newElement->element, command);
+      if (*historypath == NULL ) {
+         *historypath = newElement; 
+         return;
+      }
+      else {
+            while (lastElement->next != NULL) {
+                lastElement = lastElement->next;
+            }
+            lastElement->next = newElement;
+            return;
+      }
+}
+
+void printHistory (struct pathelement * historypath, int count) {
+     if (count == NULL) {
+         count = 10; 
+     }
+     int loopCounter = 0;
+          historypath = historypath ->next;
+     while (historypath != NULL && loopCounter < count) {
+          printf("%s\n", historypath->element);
+          historypath = historypath->next;
+          loopCounter++;
+      }
+}
+
+void deleteHistory (struct pathelement ** historypath) {
+      struct pathelement * nextElement;
+      struct pathelement * currentElement = *historypath;
+     
+      while (currentElement != NULL) {
+         nextElement = currentElement -> next; 
+         free(currentElement->element);
+         free(currentElement);
+         currentElement = nextElement; 
+        }
+      *historypath = NULL;
 }
 

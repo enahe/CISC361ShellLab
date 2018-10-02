@@ -178,7 +178,28 @@ int sh( int argc, char **argv, char **envp )
         printEnvironment(pathlist, args[0], args[1]);
         printf("\n");
         printf(prompt);
-    }
+    }  //set the environment
+	else if (strcmp(command, "setenv") == 0) {
+	printf("\nRunning built in command setenv");
+	if(args[1] == NULL) {
+		printEnvironment(pathlist, args[0], args[1]);
+	}
+	else if((args[1]!=NULL)&&(args[2]==NULL)) {
+		setenv(args[1], "", 1);
+	}
+	else {
+		setenv(args[1], args[2], 1);
+		
+		if(strcmp(args[1], "HOME") == 0) {
+			homedir = getenv("HOME");
+		}
+		else if(strcmp(args[2], "PATH") == 0) {
+			pathlist = get_path();
+		}
+	}
+        printf("\n");
+        printf(prompt);
+}
     else if (strcmp(command, "history") == 0) {
         printf("\nRunning built in command history\n");
         printHistory(historylist, args[0]);

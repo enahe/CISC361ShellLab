@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <wordexp.h>
 #include "sh.h"
 
 
@@ -30,6 +31,9 @@ int sh( int argc, char **argv, char **envp )
   homedir = password_entry->pw_dir;		/* Home directory to start
 						  out with*/
   promptPrefix = " ";   
+ 
+  
+  
   if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL )
   {
     perror("getcwd");
@@ -55,6 +59,7 @@ int sh( int argc, char **argv, char **envp )
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
+        
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
         arg = strtok(NULL, " ");
@@ -70,12 +75,23 @@ int sh( int argc, char **argv, char **envp )
              count++;
         }
         count = 0;
+        wordexp_t wildcard;
+        memset(&wildcard, 0, sizeof(wildcard));
         while (arg != NULL) {
-           args[count] = arg;
+           if (count = 0) {
+               wordexp(arg, &wildcard, 0);
+           }
+           else {
+               wordexp(arg, &wildcard, WRDE_APPEND);
+           }
            count++;
            arg = strtok(NULL, " ");
       }
-   
+
+      if (count > 0) {
+      args = wildcard.we_wordv;
+      }
+ 
     printf("%s", prompt);
     /* check for each built in command and implement */
     if (strcmp(command, "exit") == 0) {
@@ -182,12 +198,9 @@ int sh( int argc, char **argv, char **envp )
        char * pathline = calloc(MAX_CANON, sizeof(char));
        pathline = which(command, pathlist); 
        argsEx[0] = pathline;
-       //error here, when I do this, the rest of args is lost.
         count = 0;
         while (args[count] != NULL) {
-           printf("Fixing command arguments");
            argsEx[count+1] = args[count];
-           printf(argsEx[count+1]);
            count++;
       }
      if(pid == -1) {

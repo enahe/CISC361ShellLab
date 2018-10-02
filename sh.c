@@ -166,6 +166,11 @@ int sh( int argc, char **argv, char **envp )
         printf("\n");
         printf(prompt);
     }
+    else if (strcmp(command, "printenv") == 0) {
+        printEnvironment(pathlist, args[0], args[1]);
+        printf("\n");
+        printf(prompt);
+    }
 
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
@@ -198,7 +203,7 @@ int sh( int argc, char **argv, char **envp )
        char * pathline = calloc(MAX_CANON, sizeof(char));
        pathline = which(command, pathlist); 
        argsEx[0] = pathline;
-        count = 0;
+       count = 0;
         while (args[count] != NULL) {
            argsEx[count+1] = args[count];
            count++;
@@ -339,7 +344,20 @@ char *promptUser(char * currentPrompt, char * currentHeader, char * currentDIR, 
            snprintf(currentPrompt, PROMPTMAX, "%s%s%s%s", currentHeader, " [", currentDIR, "]>");
            return currentHeader;
       }
-           
-      
+}
+
+void printEnvironment(struct pathelement *pathlist, char * firstEnv, char * secondEnv) {
+      if (firstEnv == NULL) {
+              while (pathlist->next != NULL) {
+              printf("%s\n", pathlist->element);
+              pathlist = pathlist->next;
+              }
+      }
+      else if (secondEnv != NULL) {
+              perror("Too many arguments passed");
+      }
+      else {
+              printf(getenv(firstEnv));
+      }
 }
 

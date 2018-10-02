@@ -46,6 +46,9 @@ int sh( int argc, char **argv, char **envp )
 
   /* Put PATH into a linked list */
   pathlist = get_path();
+  sigignore(SIGINT);
+  sigignore(SIGTERM);
+  sigignore(SIGTSTP);
 
   while ( go )
   {
@@ -57,6 +60,7 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
+        
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
@@ -181,6 +185,10 @@ int sh( int argc, char **argv, char **envp )
         printf("\n");
         printf(prompt);
     }
+    else if (*command == NULL) {
+        printf("\n");
+        printf(prompt);
+    }
 
     /*  else  program to exec */
      /* do fork(), execve() and waitpid() */
@@ -232,7 +240,9 @@ int sh( int argc, char **argv, char **envp )
         waitpid(-1, NULL, 0);
         printf(prompt);
     }
+    
 }
+ 
     free(arg);
     free(command);
   }
@@ -415,4 +425,6 @@ void deleteHistory (struct pathelement ** historypath) {
         }
       *historypath = NULL;
 }
+
+
 

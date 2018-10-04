@@ -238,6 +238,7 @@ int sh( int argc, char **argv, char **envp )
 
      else {
      pid_t pid = fork();
+     int background = 0;
      /* find it */
        char * pathline = calloc(MAX_CANON, sizeof(char));
        pathline = which(command, pathlist); 
@@ -252,6 +253,17 @@ int sh( int argc, char **argv, char **envp )
         return;
      } 
      else if (pid == 0) {
+        count = 0;
+        while (argsEx[count] != NULL) {
+           if (strcmp(argsEx[count], "&") == 0) {
+               background = 1;
+           }
+           count++;
+          } 
+          //if & is there, then background the process
+          if (background == 1) {
+               setpgid(pid,0);
+          }
           if(execve(pathline, argsEx, envp) < 0) {
                  printf("Could not execute command.\n");
           }

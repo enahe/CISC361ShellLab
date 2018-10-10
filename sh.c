@@ -26,6 +26,7 @@ int sh( int argc, char **argv, char **envp )
   char *homedir;
   struct pathelement *pathlist;
   struct pathelement *historylist;
+  int background;
   
   uid = getuid();
   password_entry = getpwuid(uid);               /* get passwd info */
@@ -60,7 +61,7 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
-        
+        //background = 0;
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
@@ -81,13 +82,30 @@ int sh( int argc, char **argv, char **envp )
         }
         count = 0;
         wordexp_t wildcard;
+        printf("%s", arg);
         memset(&wildcard, 0, sizeof(wildcard));
         while (arg != NULL) {
-           if (count = 0) {
-               wordexp(arg, &wildcard, 0);
+           if (count == 0) {
+               if (strcmp(arg, "&") == 0) {
+                  printf("here");
+                  background = 1;
+                  wordexp("", &wildcard, 0);
+               }
+               else {
+                     printf("Not here");
+                     wordexp(arg, &wildcard, 0);
+               }
            }
            else {
-               wordexp(arg, &wildcard, WRDE_APPEND);
+               if (strcmp(arg, "&") == 0) {
+                   printf("here again");
+                   background = 1;
+                   wordexp("", &wildcard, WRDE_APPEND);
+               }
+               else {
+                    printf("Not here again");
+                    wordexp(arg, &wildcard, WRDE_APPEND);
+               }
            }
            count++;
            arg = strtok(NULL, " ");
@@ -238,7 +256,6 @@ int sh( int argc, char **argv, char **envp )
 
      else {
      pid_t pid = fork();
-     int background = 0;
      /* find it */
        char * pathline = calloc(MAX_CANON, sizeof(char));
        pathline = which(command, pathlist); 
@@ -253,15 +270,9 @@ int sh( int argc, char **argv, char **envp )
         return;
      } 
      else if (pid == 0) {
-        count = 0;
-        while (argsEx[count] != NULL) {
-           if (strcmp(argsEx[count], "&") == 0) {
-               background = 1;
-           }
-           count++;
-          } 
           //if & is there, then background the process
           if (background == 1) {
+               printf("Backgrounding");
                setpgid(pid,0);
           }
           if(execve(pathline, argsEx, envp) < 0) {

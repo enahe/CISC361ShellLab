@@ -26,7 +26,7 @@ int sh( int argc, char **argv, char **envp )
   char *homedir;
   struct pathelement *pathlist;
   struct pathelement *historylist;
-  int background;
+  int background = 0;
   
   uid = getuid();
   password_entry = getpwuid(uid);               /* get passwd info */
@@ -61,7 +61,7 @@ int sh( int argc, char **argv, char **envp )
     /* get command line and process */
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
-        //background = 0;
+        background = 0;
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
@@ -273,15 +273,19 @@ int sh( int argc, char **argv, char **envp )
           //if & is there, then background the process
           if (background == 1) {
                printf("Backgrounding");
-               setpgid(pid,0);
+               setpgid(0,0);
           }
           if(execve(pathline, argsEx, envp) < 0) {
                  printf("Could not execute command.\n");
           }
           exit(0);
      }
-     else {
-        waitpid(-1, NULL, 0);
+     else  if (background == 1){
+        printf("Background \n");
+        printf(prompt);
+    }
+    else {
+        waitpid (-1, &status, WNOHANG);
         printf(prompt);
     }
     

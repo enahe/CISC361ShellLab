@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <wordexp.h>
+#include <utmpx.h>
 #include "sh.h"
 
 
@@ -26,6 +27,8 @@ int sh( int argc, char **argv, char **envp )
   char *homedir;
   struct pathelement *pathlist;
   struct pathelement *historylist;
+  struct utmpx *up;
+  
   int background = 0;
   
   uid = getuid();
@@ -44,6 +47,7 @@ int sh( int argc, char **argv, char **envp )
   owd = calloc(strlen(pwd) + 1, sizeof(char));
   memcpy(owd, pwd, strlen(pwd));
   snprintf(prompt, PROMPTMAX, "%s%s%s%s", promptPrefix , "[", pwd, "]>");
+  setutxent();
 
   /* Put PATH into a linked list */
   pathlist = get_path();

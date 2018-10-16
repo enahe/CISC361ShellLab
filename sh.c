@@ -26,7 +26,8 @@ int sh( int argc, char **argv, char **envp )
   struct passwd *password_entry;
   char *homedir;
   struct pathelement *pathlist;
-  struct pathelement *historylist;
+  struct pathelement *historylist = NULL;
+  struct pathelement *userlist = NULL;
   struct utmpx *up;
   
   int background = 0;
@@ -86,28 +87,23 @@ int sh( int argc, char **argv, char **envp )
         }
         count = 0;
         wordexp_t wildcard;
-        printf("%s", arg);
         memset(&wildcard, 0, sizeof(wildcard));
         while (arg != NULL) {
            if (count == 0) {
                if (strcmp(arg, "&") == 0) {
-                  printf("here");
                   background = 1;
                   wordexp("", &wildcard, 0);
                }
                else {
-                     printf("Not here");
                      wordexp(arg, &wildcard, 0);
                }
            }
            else {
                if (strcmp(arg, "&") == 0) {
-                   printf("here again");
                    background = 1;
                    wordexp("", &wildcard, WRDE_APPEND);
                }
                else {
-                    printf("Not here again");
                     wordexp(arg, &wildcard, WRDE_APPEND);
                }
            }
@@ -226,6 +222,12 @@ int sh( int argc, char **argv, char **envp )
         printf("\nRunning built in command history\n");
         printHistory(historylist, args[0]);
         printf("\n");
+        printf(prompt);
+    }
+    else if (strcmp(command, "watchuser") == 0) {
+        printf("\nRunning built in command watchuser\n");
+        addUser(args[0], &userlist);
+        printUsers(userlist);
         printf(prompt);
     }
     else if (*command == NULL) {
@@ -435,9 +437,9 @@ void printEnvironment(struct pathelement *pathlist, char * firstEnv, char * seco
 }
 
 void addHistory (char * command, struct pathelement **historypath) { 
-      struct pathelement* newElement = (struct pathelement*)malloc(sizeof(struct pathelement));
+      struct pathelement* newElement = calloc(1, sizeof(struct pathelement));
       struct pathelement* lastElement = *historypath;
-      newElement->element = malloc(strlen(command)+1);
+      newElement->element = malloc((strlen(command)+1)*sizeof(char));
       strcpy(newElement->element, command);
       if (*historypath == NULL ) {
          *historypath = newElement; 
@@ -476,6 +478,31 @@ void deleteHistory (struct pathelement ** historypath) {
          currentElement = nextElement; 
         }
       *historypath = NULL;
+}
+
+void addUser (char * command, struct pathelement **userpath) { 
+      struct pathelement* newElement = calloc(1, sizeof(struct pathelement));
+      struct pathelement* lastElement = *userpath;
+      newElement->element = malloc((strlen(command)+1)*sizeof(char));
+      strcpy(newElement->element, command);
+      if (*userpath == NULL ) {
+         *userpath = newElement; 
+         return;
+      }
+      else {
+            while (lastElement->next != NULL) {
+                lastElement = lastElement->next;
+            }
+            lastElement->next = newElement;
+            return;
+      }
+}
+
+void printUsers (struct pathelement * userpath) {
+     while (userpath != NULL) {
+          printf("%s\n", userpath->element);
+          userpath = userpath->next;
+      }
 }
 
 

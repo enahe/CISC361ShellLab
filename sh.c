@@ -483,6 +483,15 @@ void deleteHistory (struct pathelement ** historypath) {
 void addUser (char * command, struct pathelement **userpath) { 
       struct pathelement* newElement = calloc(1, sizeof(struct pathelement));
       struct pathelement* lastElement = *userpath;
+      struct pathelement* tempElement = *userpath;
+      int repeat = 0;
+      while (tempElement != NULL ) {
+         if (strcmp(tempElement->element, command) == 0) {
+         repeat = 1;
+         }
+         tempElement = tempElement->next;
+      }
+      if (repeat == 0) {
       newElement->element = malloc((strlen(command)+1)*sizeof(char));
       strcpy(newElement->element, command);
       if (*userpath == NULL ) {
@@ -496,6 +505,7 @@ void addUser (char * command, struct pathelement **userpath) {
             lastElement->next = newElement;
             return;
       }
+}
 }
 
 void printUsers (struct pathelement * userpath) {

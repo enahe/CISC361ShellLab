@@ -226,7 +226,7 @@ int sh( int argc, char **argv, char **envp )
     }
     else if (strcmp(command, "watchuser") == 0) {
         printf("\nRunning built in command watchuser\n");
-        addUser(args[0], &userlist);
+        watchUser(&userlist, args[0], args[1]);
         printUsers(userlist);
         printf(prompt);
     }
@@ -513,6 +513,51 @@ void printUsers (struct pathelement * userpath) {
           printf("%s\n", userpath->element);
           userpath = userpath->next;
       }
+}
+
+void deleteUser (char * removeUser, struct pathelement **userpath) {
+    // Store head node 
+    struct pathelement* temp = *userpath, *prev; 
+  
+    // If head node itself holds the key to be deleted 
+    if (temp != NULL && (strcmp(temp->element, removeUser) == 0))
+    { 
+        *userpath = temp->next;   // Changed head 
+        free(temp->element);
+        free(temp);               // free old head 
+        return; 
+    } 
+  
+    // Search for the key to be deleted, keep track of the 
+    // previous node as we need to change 'prev->next' 
+    while (temp != NULL && (strcmp(temp->element, removeUser) != 0)) 
+    { 
+        prev = temp; 
+        temp = temp->next; 
+    } 
+  
+    // If key was not present in linked list 
+    if (temp == NULL) return; 
+  
+    // Unlink the node from linked list 
+    prev->next = temp->next; 
+    free(temp->element);
+  
+    free(temp);  // Free memory 
+}
+
+void watchUser(struct pathelement **userpath, char * user, char * off) {
+     
+     if (off == NULL && user != NULL) {
+     addUser(user, userpath);
+     }
+     else if (strcmp(off, "off") == 0) {
+     deleteUser(user, userpath);
+     }
+     else {
+     perror("Please enter valid inputs");
+     }
+
 }
 
 

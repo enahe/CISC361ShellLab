@@ -17,6 +17,7 @@
 pthread_mutex_t watchMutex;
 pthread_t thread_id;
 struct pathelement *userlist = NULL;
+
 int sh( int argc, char **argv, char **envp )
 {
   char *prompt = calloc(PROMPTMAX, sizeof(char));
@@ -30,8 +31,6 @@ int sh( int argc, char **argv, char **envp )
   char *homedir;
   struct pathelement *pathlist;
   struct pathelement *historylist = NULL;
- 
-  struct utmpx *up;
   int firstRun = 0;
   int background = 0;
   
@@ -233,6 +232,7 @@ int sh( int argc, char **argv, char **envp )
         watchUser(&userlist, args[0], args[1]);
         pthread_mutex_unlock(&watchMutex);
         if (firstRun == 0) {
+        printf("\nCreating the watchuser thread.\n");
         pthread_create(&thread_id, NULL, collectLogin, (void *) &userlist);
         firstRun = 1;
         }
@@ -573,11 +573,21 @@ void *collectLogin(void * userpath) {
       struct pathelement **userPathagain, *currentElement;
       pthread_mutex_lock(&watchMutex);
       userPathagain = (struct pathelement **) userpath;
-      currentElement = *userPathagain;
-      while (currentElement != NULL) {
-          printf("%s\n", currentElement->element);
+      struct utmpx *up;
+      setutxent();			/* start at beginning */
+      while (up = getutxent())	/* get an entry */
+      {
+      if ( up->ut_type == USER_PROCESS )	/* only care about users */
+      {
+       currentElement = *userPathagain;
+       while (currentElement != NULL) {
+         if(strcmp(up->ut_user, currentElement->element) == 0) {
+         printf("\n%s has logged on %s from %s\n", up->ut_user, up->ut_line, up ->ut_host);
+         }
           currentElement = currentElement->next;
-      }
+      }  
+    }
+  }
       pthread_mutex_unlock(&watchMutex);
 }
 }

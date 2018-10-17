@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <pwd.h>
 #include <dirent.h>
 #include <sys/types.h>
@@ -66,15 +67,20 @@ int sh( int argc, char **argv, char **envp )
 
    while(fgets(commandline, MAX_CANON, stdin) != NULL) {
         background = 0;
+	redirect = 0;
+	int redirect index;
         commandline[strlen(commandline)-1] = '\0';
         arg = calloc(MAX_CANON, sizeof(char));
         command = calloc(MAX_CANON, sizeof(char));
+	redirectStr = calloc(MAX_CANON, sizeof(char));
+	fileDest = calloc(MAX_CANON, sizeof(char));
         
         arg = strtok(commandline, " ");
         strcpy(command, arg); 
         arg = strtok(NULL, " ");
         addHistory(command, &historylist);
         int count = 0;
+	
         while (argsEx[count] != NULL) {
            argsEx[count] = NULL;
            count++;
@@ -84,11 +90,29 @@ int sh( int argc, char **argv, char **envp )
              args[count] = NULL;
              count++;
         }
+
+	/*checking for wildcard and redirect*/
         count = 0;
-        wordexp_t wildcard;
+        wordexp_t wildcard, filename;
         printf("%s", arg);
         memset(&wildcard, 0, sizeof(wildcard));
+	memset(&filename, 0, sizeof(filename));
+	
         while (arg != NULL) {
+	  if(strcmp(arg, ">") ||
+	     strcmp(arg, ">&") ||
+	     strcmp(arg, ">>") ||
+	     strcmp(arg, ">>&") ||
+	     strcmp(arg, "<")) {
+	    
+	    redirectStr = arg;
+	    redirect = 1;
+	    redirectIndex = count;
+	    }
+	  if (redirect) {
+	    fileName = arg;
+	  }
+	    
            if (count == 0) {
                if (strcmp(arg, "&") == 0) {
                   printf("here");
@@ -118,6 +142,8 @@ int sh( int argc, char **argv, char **envp )
       if (count > 0) {
       args = wildcard.we_wordv;
       }
+
+      
 
     printf("%s", prompt);
     /* check for each built in command and implement */
@@ -245,6 +271,20 @@ int sh( int argc, char **argv, char **envp )
         return;
      } 
      else if (pid == 0) {
+       if(redirect) {
+	 /*change args list after and including "<" to NULL*/
+	 
+	 int count = redirectIndex;
+	 while (args[count] != NULL) {
+	   args[count] = NULL;
+	   count ++;
+	 }
+	 fid = open(filename, O_WRONLY|O_CREAT|O_TRUNC);
+	 close(1);
+	 dup(fid);
+	 close(fid);
+       }       
+       
           if(execve(command, args, envp) < 0) {
                  printf("Could not execute command.\n");
           }
@@ -279,15 +319,24 @@ int sh( int argc, char **argv, char **envp )
                printf("Backgrounding");
                setpgid(0,0);
           }
+	         if(redirect) {
+	 /*change args list after and including "<" to NULL*/
+	 
+	 int count = redirectIndex;
+	 while (args[count] != NULL) {
+	   args[count] = NULL;
+	   count ++;
+	 }
+	 fid = open(filename, O_WRONLY|O_CREAT|O_TRUNC);
+	 close(1);
+	 dup(fid);
+	 close(fid);
+       }   
           if(execve(pathline, argsEx, envp) < 0) {
                  printf("Could not execute command.\n");
           }
           exit(0);
      }
-     else  if (background == 1){
-        printf("Background \n");
-        printf(prompt);
-    }
     else {
         waitpid (-1, &status, WNOHANG);
         printf(prompt);
@@ -477,6 +526,26 @@ void deleteHistory (struct pathelement ** historypath) {
         }
       *historypath = NULL;
 }
+
+void redirect(char *command, char *redirectStr, char *fileDest) {
+  int rc = fork();
+  if (rc < 0) {
+    fprintf(stderr, "fork failed\n");
+    exit(1);
+  }
+  else if (rc == 0) {
+    close(STDOUT_FILENO);
+    open(fileDest, O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+    char *myargs[3];
+    myargs[0] = strdup(command);
+    myargs[1] = strdup(fileDest);
+    myargs[2] = NULL;
+    execvp(myargs[0], myargs);   
+  }
+  else {
+    int rc_wait = wail(NULL);
+  }
+ }
 
 
 

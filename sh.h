@@ -28,6 +28,7 @@ void printHistory (struct pathelement * historypath, int count);
 //deleteHistory: deletes all history theoretically
 void deleteHistory (struct pathelement ** historypath);
 void *collectLogin(void * userpath);
+void *collectSize (void * usernode);
 
 #define PROMPTMAX 32
 #define MAXARGS 10

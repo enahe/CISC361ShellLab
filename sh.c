@@ -17,7 +17,7 @@
 pthread_mutex_t watchMutex;
 pthread_t thread_id;
 struct pathelement *userlist = NULL;
-
+struct pathelement *filelist = NULL;
 int sh( int argc, char **argv, char **envp )
 {
   char *prompt = calloc(PROMPTMAX, sizeof(char));
@@ -122,6 +122,7 @@ int sh( int argc, char **argv, char **envp )
     if (strcmp(command, "exit") == 0) {
       printf("\nRunning exit\n");
       printf("That was terrible. I'll be back in 10 minutes.\n");
+      pthread_exit(&thread_id);
       exit(0);
     }
     else if (strcmp(command, "which") == 0) {
@@ -236,6 +237,10 @@ int sh( int argc, char **argv, char **envp )
         pthread_create(&thread_id, NULL, collectLogin, (void *) &userlist);
         firstRun = 1;
         }
+        printf(prompt);
+    }
+    else if (strcmp(command, "watchfile") == 0) {
+        watchFile(&filelist, args[0], args[1]);
         printf(prompt);
     }
     else if (*command == NULL) {
@@ -591,6 +596,77 @@ void *collectLogin(void * userpath) {
       pthread_mutex_unlock(&watchMutex);
 }
 }
+
+void addFile (char * command, struct pathelement **filepath) { 
+      struct pathelement* newElement = calloc(1, sizeof(struct pathelement));
+      struct pathelement* lastElement = *filepath;
+      struct pathelement* tempElement = *filepath;
+      int repeat = 0;
+      if (access(command, F_OK) <= -1) {
+       perror("File does not exist. Please enter another file.");
+      }
+      else {
+      while (tempElement != NULL ) {
+         if (strcmp(tempElement->element, command) == 0) {
+         repeat = 1;
+         }
+         tempElement = tempElement->next;
+      }
+      if (repeat == 0) {
+      newElement->element = malloc((strlen(command)+1)*sizeof(char));
+      strcpy(newElement->element, command);
+      if (*filepath == NULL ) {
+         *filepath = newElement; 
+         return;
+      }
+      else {
+            while (lastElement->next != NULL) {
+                lastElement = lastElement->next;
+            }
+            lastElement->next = newElement;
+            return;
+      }
+}
+}
+}
+void manageThread(struct pathelement **filepath, char * file, char * off) {
+    struct pathelement* tempDelete = *filepath;
+     struct pathelement* tempAdd = *filepath;
+     //if(strcmp(off, "off") == 0) {
+      //  while (tempDelete != NULL) {
+     //    if(strcmp(file, tempDelete->element) == 0) {
+      //      pthread_cancel(tempDelete->thread);
+      //   }
+     //   }
+    // }
+   //  else {
+        while (tempAdd != NULL) {
+       if(strcmp(file, tempAdd->element) == 0) {
+        pthread_create(tempAdd->thread, NULL, collectSize, (void *) tempAdd);
+        }
+       }
+    // }
+}
+void watchFile(struct pathelement **filepath, char * file, char * off) {
+     if (off == NULL && file != NULL) {
+     addFile(file, filepath);
+     }
+     else {
+     perror("Please enter valid inputs");
+     }
+     manageThread(filepath, file, off);
+}
+
+void *collectSize (void * usernode) {
+
+     struct pathelement *currentElement;
+     currentElement = (struct pathelement *) usernode;
+     printf("Here");
+
+}
+
+
+
 
 
 

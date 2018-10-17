@@ -10,7 +10,7 @@ sh.o: sh.c sh.h
 	$(CC) -g -c sh.c
 
 get_path.o: get_path.c get_path.h
-	$(CC) -g -c get_path.c
+	$(CC) -pthread -g -c get_path.c
 
 clean:
 	rm -rf sh.o get_path.o mysh

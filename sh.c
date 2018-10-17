@@ -11,9 +11,12 @@
 #include <signal.h>
 #include <wordexp.h>
 #include <utmpx.h>
+#include <pthread.h>
 #include "sh.h"
 
-
+pthread_mutex_t watchMutex;
+pthread_t thread_id;
+struct pathelement *userlist = NULL;
 int sh( int argc, char **argv, char **envp )
 {
   char *prompt = calloc(PROMPTMAX, sizeof(char));
@@ -27,9 +30,9 @@ int sh( int argc, char **argv, char **envp )
   char *homedir;
   struct pathelement *pathlist;
   struct pathelement *historylist = NULL;
-  struct pathelement *userlist = NULL;
+ 
   struct utmpx *up;
-  
+  int firstRun = 0;
   int background = 0;
   
   uid = getuid();
@@ -226,8 +229,13 @@ int sh( int argc, char **argv, char **envp )
     }
     else if (strcmp(command, "watchuser") == 0) {
         printf("\nRunning built in command watchuser\n");
+        pthread_mutex_lock(&watchMutex);
         watchUser(&userlist, args[0], args[1]);
-        printUsers(userlist);
+        pthread_mutex_unlock(&watchMutex);
+        if (firstRun == 0) {
+        pthread_create(&thread_id, NULL, collectLogin, (void *) &userlist);
+        firstRun = 1;
+        }
         printf(prompt);
     }
     else if (*command == NULL) {
@@ -547,7 +555,6 @@ void deleteUser (char * removeUser, struct pathelement **userpath) {
 }
 
 void watchUser(struct pathelement **userpath, char * user, char * off) {
-     
      if (off == NULL && user != NULL) {
      addUser(user, userpath);
      }
@@ -558,6 +565,21 @@ void watchUser(struct pathelement **userpath, char * user, char * off) {
      perror("Please enter valid inputs");
      }
 
+}
+
+void *collectLogin(void * userpath) {
+ while(1) {
+      sleep(20);
+      struct pathelement **userPathagain, *currentElement;
+      pthread_mutex_lock(&watchMutex);
+      userPathagain = (struct pathelement **) userpath;
+      currentElement = *userPathagain;
+      while (currentElement != NULL) {
+          printf("%s\n", currentElement->element);
+          currentElement = currentElement->next;
+      }
+      pthread_mutex_unlock(&watchMutex);
+}
 }
 
 

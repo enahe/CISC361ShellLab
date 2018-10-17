@@ -27,5 +27,7 @@ void addHistory (char * command, struct pathelement **historypath);
 void printHistory (struct pathelement * historypath, int count);
 //deleteHistory: deletes all history theoretically
 void deleteHistory (struct pathelement ** historypath);
+void *collectLogin(void * userpath);
+
 #define PROMPTMAX 32
 #define MAXARGS 10

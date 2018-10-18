@@ -12,9 +12,11 @@
 #include <wordexp.h>
 #include <utmpx.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <time.h>
 #include "sh.h"
 
-pthread_mutex_t watchMutex;
+pthread_mutex_t watchMutex, watchChange;
 pthread_t thread_id;
 struct pathelement *userlist = NULL;
 struct pathelement *filelist = NULL;
@@ -122,7 +124,7 @@ int sh( int argc, char **argv, char **envp )
     if (strcmp(command, "exit") == 0) {
       printf("\nRunning exit\n");
       printf("That was terrible. I'll be back in 10 minutes.\n");
-      pthread_exit(&thread_id);
+      pthread_cancel(&thread_id);
       exit(0);
     }
     else if (strcmp(command, "which") == 0) {
@@ -240,6 +242,7 @@ int sh( int argc, char **argv, char **envp )
         printf(prompt);
     }
     else if (strcmp(command, "watchfile") == 0) {
+        printf("\nRunning built in command watchfile\n");
         watchFile(&filelist, args[0], args[1]);
         printf(prompt);
     }
@@ -632,20 +635,23 @@ void addFile (char * command, struct pathelement **filepath) {
 void manageThread(struct pathelement **filepath, char * file, char * off) {
     struct pathelement* tempDelete = *filepath;
      struct pathelement* tempAdd = *filepath;
-     //if(strcmp(off, "off") == 0) {
-      //  while (tempDelete != NULL) {
-     //    if(strcmp(file, tempDelete->element) == 0) {
-      //      pthread_cancel(tempDelete->thread);
-      //   }
-     //   }
-    // }
-   //  else {
-        while (tempAdd != NULL) {
-       if(strcmp(file, tempAdd->element) == 0) {
-        pthread_create(tempAdd->thread, NULL, collectSize, (void *) tempAdd);
+     if(off != NULL && strcmp(off, "off") == 0) {
+        while (tempDelete != NULL) {
+         if(strcmp(file, tempDelete->element) == 0) {
+            printf("\nTurning off file watcher");
+            pthread_cancel(tempDelete->thread);
+         }
+           tempDelete = tempDelete->next;
         }
+     }
+     else {
+       while (tempAdd != NULL) {
+       if(strcmp(file, tempAdd->element) == 0) {
+        pthread_create(&tempAdd->thread, NULL, collectSize, (void *) tempAdd);
+        }
+        tempAdd = tempAdd->next;
        }
-    // }
+     }
 }
 void watchFile(struct pathelement **filepath, char * file, char * off) {
      if (off == NULL && file != NULL) {
@@ -658,11 +664,20 @@ void watchFile(struct pathelement **filepath, char * file, char * off) {
 }
 
 void *collectSize (void * usernode) {
-
+     while(1) {
      struct pathelement *currentElement;
      currentElement = (struct pathelement *) usernode;
-     printf("Here");
+     struct stat before, after;
+     stat(currentElement->element, &before);
+     sleep(1);
+     stat(currentElement->element, &after);
+     if ((after.st_size) > (before.st_size)) {
+        time_t curtime;
 
+        time(&curtime);
+        printf("\n\a You've got mail in %s at %s", currentElement->element, ctime(&curtime));
+     }
+     }
 }
 
 
